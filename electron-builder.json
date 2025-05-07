@@ -1,0 +1,38 @@
+{
+  "appId": "com.shx.easynote",
+  "productName": "Easynote",
+  "files": ["dist/**/*", "package.json", "resources"],
+  "artifactName": "Easynote-${version}-${os}-${arch}.${ext}",
+  "electronVersion": "35.1.5",
+  "electronDist": "node_modules/electron/dist",
+  "directories": {
+    "output": "package"
+  },
+  "mac": {
+    "category": "public.app-category.productivity",
+    "icon": "resources/img/logo.icns",
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ]
+  },
+  "dmg": {
+    "backgroundColor": "#eaf6fe"
+  },
+  "win": {
+    "icon": "resources/img/logo.png",
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64", "ia32"]
+      }
+    ]
+  },
+  "nsis": {
+    "installerIcon": "resources/img/logo.ico",
+    "uninstallerIcon": "resources/img/logo.ico",
+    "installerHeaderIcon": "resources/img/logo.ico"
+  }
+}
