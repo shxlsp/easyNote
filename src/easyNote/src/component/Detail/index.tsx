@@ -1,7 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { createEditor, Descendant, Editor, Transforms, Element as SlateElement, BaseEditor } from 'slate';
-import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
-import { HistoryEditor, withHistory } from 'slate-history';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  createEditor,
+  Descendant,
+  Editor,
+  Transforms,
+  Element as SlateElement,
+  BaseEditor,
+} from "slate";
+import { Slate, Editable, withReact, ReactEditor } from "slate-react";
+import { HistoryEditor, withHistory } from "slate-history";
 import { Button, Tooltip, message } from "antd";
 import {
   UndoOutlined,
@@ -10,24 +23,34 @@ import {
   StrikethroughOutlined,
   UnorderedListOutlined,
   CheckSquareOutlined,
-  PictureOutlined
+  PictureOutlined,
 } from "@ant-design/icons";
-import { ToolbarWrapper, ToolbarButton, DetailWrapper, EditorContainer } from './styled';
-import { throttle } from 'lodash';
+import {
+  ToolbarWrapper,
+  ToolbarButton,
+  DetailWrapper,
+  EditorContainer,
+} from "./styled";
+import { throttle } from "lodash";
+import { useDataCache, useThrottle } from "../../hooks";
+import useClassState from "../../hooks/useClassState";
 
-type CustomElement = { type: 'paragraph' | 'list-item' | 'checkbox' | 'image'; children: CustomText[] }
-type CustomText = { text: string; bold?: boolean; strike?: boolean }
+type CustomElement = {
+  type: "paragraph" | "list-item" | "checkbox" | "image";
+  children: CustomText[];
+};
+type CustomText = { text: string; bold?: boolean; strike?: boolean };
 
-declare module 'slate' {
+declare module "slate" {
   interface CustomTypes {
-    Editor: BaseEditor & ReactEditor & HistoryEditor
-    Element: CustomElement
-    Text: CustomText
+    Editor: BaseEditor & ReactEditor & HistoryEditor;
+    Element: CustomElement;
+    Text: CustomText;
   }
 }
 
 interface DetailProps {
-  id: string | 'new';
+  id: string | "new";
   onBack: () => void;
 }
 
@@ -43,89 +66,111 @@ const TOOLBAR_BTNS = [
 
 const initialValue: Descendant[] = [
   {
-    type: 'paragraph',
-    children: [{ text: '' }],
+    type: "paragraph",
+    children: [{ text: "" }],
   },
 ];
 
 const Detail: React.FC<DetailProps> = ({ id, onBack }) => {
   const [editor] = useState(() => withReact(withHistory(createEditor())));
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState<Descendant[]>(initialValue);
+  const [{ title, content }, setState, stateRef] = useClassState({
+    title: "",
+    content: initialValue,
+  });
+  const idRef = useRef(id);
 
   useEffect(() => {
     const fetchNote = async () => {
-      if (id !== 'new') {
+      if (id !== "new") {
         try {
           const note = await window.jsBridge.noteApi.readNote(id);
-          setTitle(note.title);
-          setContent(JSON.parse(note.content));
+          editor.children = JSON.parse(note.content);
+          setState({
+            title: note.title,
+            content: JSON.parse(note.content),
+          });
         } catch (error) {
-          console.error('Failed to fetch note:', error);
-          message.error('获取笔记失败');
+          console.error("Failed to fetch note:", error);
+          message.error("获取笔记失败");
         }
       }
     };
     fetchNote();
   }, [id]);
 
-  const saveNote = useMemo(
-    () =>
-      throttle(async () => {
-        if (id === 'new') {
-          try {
-            const newNote = await window.jsBridge.noteApi.createNote({
-              title,
-              content: JSON.stringify(content),
-            });
-            message.success('笔记已创建');
-            onBack();
-          } catch (error) {
-            console.error('Failed to create note:', error);
-            message.error('创建笔记失败');
-          }
-        } else {
-          try {
-            await window.jsBridge.noteApi.updateNote({
-              id,
-              title,
-              content: JSON.stringify(content),
-            });
-            message.success('笔记已保存');
-          } catch (error) {
-            console.error('Failed to update note:', error);
-            message.error('保存笔记失败');
-          }
-        }
-      }, 2000),
-    [id, title, content, onBack]
+  const saveNote = useCallback(async () => {
+    const { title, content } = stateRef.current;
+    if (idRef.current === "new") {
+      try {
+        const newNote = await window.jsBridge.noteApi.createNote({
+          title,
+          content: JSON.stringify(content),
+        });
+        idRef.current = newNote.id;
+        message.success("笔记已创建");
+        // onBack();
+      } catch (error) {
+        console.error("Failed to create note:", error);
+        message.error("创建笔记失败");
+      }
+    } else {
+      try {
+        await window.jsBridge.noteApi.updateNote({
+          id: idRef.current,
+          title,
+          content: JSON.stringify(content),
+        });
+        message.success("笔记已保存");
+      } catch (error) {
+        console.error("Failed to update note:", error);
+        message.error("保存笔记失败");
+      }
+    }
+  }, [id])
+
+  const saveNoteThrottle = useThrottle(
+    saveNote,
+    2000,
+    [saveNote],
+    { leading: false, trailing: true }
   );
 
+  const onEditorChange = (content) => {
+    setState({ content });
+    saveNoteThrottle();
+  };
+
+  const onTitleChange = (e) => {
+    setState({ title: e.target.value });
+    saveNoteThrottle();
+  };
+
   useEffect(() => {
-    saveNote();
+    // saveNote();
     return () => {
-      saveNote.cancel();
+      saveNote();
+      saveNoteThrottle.cancel();
     };
-  }, [content, saveNote]);
+  }, [saveNote]);
 
   const renderElement = useCallback((props: any) => {
     switch (props.element.type) {
-      case 'list-item':
+      case "list-item":
         return <li {...props.attributes}>{props.children}</li>;
-      case 'checkbox':
+      case "checkbox":
         return (
           <div {...props.attributes}>
             <input type="checkbox" checked={props.element.checked} readOnly />
             {props.children}
           </div>
         );
-      case 'image':
+      case "image":
         return (
           <img
             {...props.attributes}
             src={props.element.url}
             alt="Uploaded image"
-            style={{ maxWidth: '100%' }}
+            style={{ maxWidth: "100%" }}
           />
         );
       default:
@@ -152,23 +197,26 @@ const Detail: React.FC<DetailProps> = ({ id, onBack }) => {
         editor.redo();
         break;
       case "bold":
-        Editor.addMark(editor, 'bold', true);
+        Editor.addMark(editor, "bold", true);
         break;
       case "strike":
-        Editor.addMark(editor, 'strike', true);
+        Editor.addMark(editor, "strike", true);
         break;
       case "list":
         Transforms.setNodes(
           editor,
-          { type: 'list-item' },
-          { match: n => SlateElement.isElement(n) && Editor.isBlock(editor, n) }
+          { type: "list-item" },
+          {
+            match: (n) =>
+              SlateElement.isElement(n) && Editor.isBlock(editor, n),
+          }
         );
         break;
       case "checkbox":
         Transforms.insertNodes(editor, {
-          type: 'checkbox',
+          type: "checkbox",
           checked: false,
-          children: [{ text: '' }],
+          children: [{ text: "" }],
         } as CustomElement);
         break;
       case "image":
@@ -181,26 +229,29 @@ const Detail: React.FC<DetailProps> = ({ id, onBack }) => {
 
   const handleImageUpload = async () => {
     // 这里应该实现文件选择逻辑，为了简化，我们使用一个模拟的文件buffer
-    const mockFileBuffer = Buffer.from('mock image data');
-    const mockFileName = 'mock_image.png';
+    const mockFileBuffer = Buffer.from("mock image data");
+    const mockFileName = "mock_image.png";
 
     try {
-      const { path } = await window.jsBridge.noteApi.uploadImage(mockFileBuffer, mockFileName);
+      const { path } = await window.jsBridge.noteApi.uploadImage(
+        mockFileBuffer,
+        mockFileName
+      );
       Transforms.insertNodes(editor, {
-        type: 'image',
+        type: "image",
         url: path,
-        children: [{ text: '' }],
+        children: [{ text: "" }],
       } as CustomElement);
     } catch (error) {
-      console.error('Failed to upload image:', error);
-      message.error('上传图片失败');
+      console.error("Failed to upload image:", error);
+      message.error("上传图片失败");
     }
   };
 
   return (
     <DetailWrapper>
       <ToolbarWrapper>
-        {TOOLBAR_BTNS.map(btn => (
+        {TOOLBAR_BTNS.map((btn) => (
           <Tooltip title={btn.label} key={btn.key}>
             <ToolbarButton
               icon={btn.icon}
@@ -214,32 +265,26 @@ const Detail: React.FC<DetailProps> = ({ id, onBack }) => {
         <input
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={onTitleChange}
           placeholder="笔记标题"
           style={{
             fontSize: 20,
-            fontWeight: 'bold',
+            fontWeight: "bold",
             marginBottom: 10,
-            width: '100%',
-            border: 'none',
-            outline: 'none',
+            width: "100%",
+            border: "none",
+            outline: "none",
           }}
         />
-        <Slate
-          editor={editor}
-          initialValue={content}
-          onChange={value => {
-            setContent(value);
-          }}
-        >
+        <Slate editor={editor} initialValue={content} onChange={onEditorChange}>
           <Editable
             renderElement={renderElement}
             renderLeaf={renderLeaf}
             style={{
-              height: 'calc(100% - 40px)',
+              height: "calc(100% - 40px)",
               fontSize: 15,
               fontFamily: "Menlo, Monaco, 'Fira Mono', monospace",
-              overflowY: 'auto',
+              overflowY: "auto",
             }}
           />
         </Slate>

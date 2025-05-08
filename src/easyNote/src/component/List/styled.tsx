@@ -1,7 +1,8 @@
-import styled, { css } from 'styled-components';
-import { Button, Card } from 'antd';
+import styled, { css } from "styled-components";
+import { Button, Card } from "antd";
 
 export const ListWrapper = styled.div<{ $viewMode: string }>`
+  padding: 15px 20px;
   &.list {
     max-width: 700px;
     margin: 0 auto;
@@ -13,7 +14,6 @@ export const ListWrapper = styled.div<{ $viewMode: string }>`
 `;
 
 export const NewButton = styled(Button)`
-  margin-bottom: 24px;
   font-weight: 500;
 `;
 
@@ -48,12 +48,16 @@ export const CardTitle = styled.div`
   gap: 6px;
 `;
 
-export const CardContent = styled.div<{ $expanded: boolean; $maxHeight: number }>`
+export const CardContent = styled.div<{
+  $expanded: boolean;
+  $maxHeight: number;
+}>`
   color: #555;
   margin-bottom: 8px;
   font-size: 15px;
-  max-height: ${({ $expanded, $maxHeight }) => ($expanded ? 'none' : `${$maxHeight}px`)};
-  overflow: ${({ $expanded }) => ($expanded ? 'visible' : 'hidden')};
+  max-height: ${({ $expanded, $maxHeight }) =>
+    $expanded ? "none" : `${$maxHeight}px`};
+  overflow: ${({ $expanded }) => ($expanded ? "visible" : "hidden")};
   white-space: pre-line;
   position: relative;
 `;
@@ -62,7 +66,7 @@ export const CardExpandBtn = styled(Button)`
   position: absolute;
   right: 0;
   bottom: 0;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255, 255, 255, 0.8);
   z-index: 1;
   padding: 0 6px;
 `;

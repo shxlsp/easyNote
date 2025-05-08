@@ -1,8 +1,37 @@
 import React, { useEffect, useState } from "react";
-import { Card, List as AntdList, Button, Dropdown, Menu, Tooltip, Spin, Empty, message, Space } from "antd";
-import { EllipsisOutlined, EditOutlined, PushpinFilled, PushpinOutlined, DeleteOutlined, UpOutlined, DownOutlined } from "@ant-design/icons";
+import {
+  Card,
+  List as AntdList,
+  Button,
+  Dropdown,
+  Menu,
+  Tooltip,
+  Spin,
+  Empty,
+  message,
+  Space,
+} from "antd";
+import {
+  EllipsisOutlined,
+  EditOutlined,
+  PushpinFilled,
+  PushpinOutlined,
+  DeleteOutlined,
+  UpOutlined,
+  DownOutlined,
+} from "@ant-design/icons";
 import type { ViewMode } from "../MainPage";
-import { ListWrapper, NewButton, SpinWrap, EmptyWrap, CardWrap, CardTitle, CardContent, CardExpandBtn } from './styled';
+import {
+  ListWrapper,
+  NewButton,
+  SpinWrap,
+  EmptyWrap,
+  CardWrap,
+  CardTitle,
+  CardContent,
+  CardExpandBtn,
+} from "./styled";
+import SlateRenderer from "../SlateRenderer";
 
 interface NoteItem {
   id: string;
@@ -13,7 +42,7 @@ interface NoteItem {
 
 interface ListProps {
   viewMode: ViewMode;
-  onEdit: (id: string | 'new') => void;
+  onEdit: (id: string | "new") => void;
 }
 
 const MAX_HEIGHT = 150;
@@ -53,7 +82,7 @@ const List: React.FC<ListProps> = ({ viewMode, onEdit }) => {
 
       const { success } = await window.jsBridge.noteApi.updateNote({
         ...noteToUpdate,
-        isPinned: !isPinned
+        isPinned: !isPinned,
       });
 
       if (success) {
@@ -106,14 +135,14 @@ const List: React.FC<ListProps> = ({ viewMode, onEdit }) => {
       item.content.length > 120 ||
       !isExpanded(item.id)
         ? item.content.length > 0 &&
-          (item.content.length > 120 ||
-            item.content.split("\n").length > 6)
+          (item.content.length > 120 || item.content.split("\n").length > 6)
         : false;
     return (
       <CardWrap
         $top={item.isPinned}
         hoverable
         key={item.id}
+        style={{ width: "100%", margin: 0 }}
         title={
           <CardTitle>
             <span>{item.title}</span>
@@ -154,11 +183,8 @@ const List: React.FC<ListProps> = ({ viewMode, onEdit }) => {
         }
         bodyStyle={{ paddingTop: 14, paddingBottom: 12 }}
       >
-        <CardContent
-          $expanded={isExpanded(item.id)}
-          $maxHeight={MAX_HEIGHT}
-        >
-          {item.content}
+        <CardContent $expanded={isExpanded(item.id)} $maxHeight={MAX_HEIGHT}>
+          <SlateRenderer value={item.content} />
           {showExpand && (
             <CardExpandBtn
               size="small"
@@ -184,11 +210,7 @@ const List: React.FC<ListProps> = ({ viewMode, onEdit }) => {
 
   return (
     <ListWrapper $viewMode={viewMode}>
-      <NewButton
-        type="primary"
-        block
-        onClick={() => onEdit('new')}
-      >
+      <NewButton type="primary" block onClick={() => onEdit("new")}>
         新建轻记
       </NewButton>
       {loading ? (
@@ -201,14 +223,16 @@ const List: React.FC<ListProps> = ({ viewMode, onEdit }) => {
         </EmptyWrap>
       ) : (
         <AntdList
-          grid={
-            viewMode === "card"
-              ? { gutter: 18, column: 3 }
-              : undefined
-          }
+          grid={viewMode === "card" ? { gutter: 18, column: 3 } : undefined}
           dataSource={sortedData}
           renderItem={(item) => (
-            <AntdList.Item style={viewMode === "card" ? { display: "flex" } : {}}>
+            <AntdList.Item
+              style={
+                viewMode === "card"
+                  ? { display: "flex", border: "unset" }
+                  : { border: "unset" }
+              }
+            >
               {renderItem(item)}
             </AntdList.Item>
           )}

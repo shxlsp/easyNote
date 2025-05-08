@@ -160,3 +160,12 @@ onImageUploaded：监听图片上传事件
 数据同步：可以考虑添加一个手动刷新按钮，允许用户主动从服务器获取最新数据。
 
 可以考虑实现搜索功能、批量操作、分页加载等高级特性。
+
+
+# 问题修复
+现在轻记的页面中有两个问题。
+1. 列表中展示的卡片数据为slate json的原始数据，我需要展示为更好看的组件，请编写一个解析器组件，只进行slate数据的渲染
+2. 详情页面现在编辑之后，无法回显数据。需要修复回显问题。
+
+列表页面为src/easyNote/src/component/List/index.tsx
+详情页面为src/easyNote/src/component/Detail/index.tsx
