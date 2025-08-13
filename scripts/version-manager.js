@@ -290,8 +290,8 @@ async function main() {
         // 检查git状态
         if (checkGitStatus()) {
             console.log("⚠️  检测到有未提交的更改。请先提交或暂存您的更改。");
-            const proceed = await ask("是否仍要继续? (y/N): ");
-            if (proceed.toLowerCase() !== "y") {
+            const proceed = await ask("是否仍要继续? (y/n): ");
+            if (proceed.toLowerCase() === "n") {
                 console.log("❌ 操作已取消");
                 process.exit(0);
             }
