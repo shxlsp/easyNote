@@ -1,6 +1,6 @@
 {
   "name": "easy-note-shx",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "清记",
   "main": "dist/main.js",
   "module": "dist/main.js",
