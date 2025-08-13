@@ -24,7 +24,8 @@
     "packageMac": "electron-builder --mac --config ./electron-builder.json",
     "packageWin": "electron-builder --win --config ./electron-builder.json",
     "build": "yarn buildWebpack && packageMac && packageWin",
-    "buildMac": "yarn buildWebpack && packageMac"
+    "buildMac": "yarn buildWebpack && packageMac",
+    "version": "node ./scripts/version-manager.js"
   },
   "author": "shx",
   "license": "ISC",
